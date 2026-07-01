@@ -43,8 +43,10 @@ http://localhost:3000
 | `PORT` | `3000` | HTTP server port. |
 | `OPENAI_MODEL` | `gpt-5.4-mini` | Summarization model. |
 | `OPENAI_REASONING_EFFORT` | `low` | Reasoning effort for summaries. |
+| `OPENAI_CHUNK_MAX_OUTPUT_TOKENS` | `900` | Output cap for each intermediate chunk summary. |
 | `SUMMARY_INTERVAL_MS` | `60000` | Global minimum time between new summary generations. |
-| `MAX_TRANSCRIPT_CHARS` | `300000` | Maximum transcript size sent to OpenAI. |
+| `MAX_TRANSCRIPT_CHARS` | `300000` | Maximum transcript characters per OpenAI request chunk. |
+| `MAX_TRANSCRIPT_CHUNKS` | `8` | Maximum chunks allowed for one meeting summary. |
 | `MEETING_CACHE_TTL_MS` | `600000` | RSS feed cache lifetime. |
 
 `gpt-5.4-mini` with low reasoning is the default because meeting summarization is mostly extraction and condensation, where cost and latency matter more than frontier-level reasoning.
@@ -62,7 +64,8 @@ http://localhost:3000
 - Transcript URLs are constructed server-side from the known Granicus host and `view_id=10`.
 - A summary is generated at most once per minute globally. Cached summaries do not count against the throttle.
 - Generated summaries are cached in `data/summaries.json` and served without another OpenAI API call.
-- Transcript size is capped by `MAX_TRANSCRIPT_CHARS` to avoid accidental oversized model calls.
+- Large transcripts are split into chunks of up to `MAX_TRANSCRIPT_CHARS`.
+- Chunked summaries are capped by `MAX_TRANSCRIPT_CHUNKS` to avoid accidental runaway model calls.
 - `.env` and `data/` are ignored by Git so API keys and generated cache files are not committed.
 
 For multi-instance deployments, replace the local JSON cache and rate-limit state with a shared store such as Redis or Postgres so the one-per-minute rule is enforced across all instances.

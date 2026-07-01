@@ -50,8 +50,10 @@ export const config = {
   meetingCacheTtlMs: numberFromEnv("MEETING_CACHE_TTL_MS", 10 * 60 * 1000),
   summaryIntervalMs: numberFromEnv("SUMMARY_INTERVAL_MS", 60 * 1000),
   maxTranscriptChars: numberFromEnv("MAX_TRANSCRIPT_CHARS", 300000),
+  maxTranscriptChunks: numberFromEnv("MAX_TRANSCRIPT_CHUNKS", 8),
   openAiApiKey: process.env.OPENAI_API_KEY || "",
   openAiModel: process.env.OPENAI_MODEL || "gpt-5.4-mini",
   openAiReasoningEffort: process.env.OPENAI_REASONING_EFFORT || "low",
+  openAiChunkMaxOutputTokens: numberFromEnv("OPENAI_CHUNK_MAX_OUTPUT_TOKENS", 900),
   openAiMaxOutputTokens: numberFromEnv("OPENAI_MAX_OUTPUT_TOKENS", 1800)
 };

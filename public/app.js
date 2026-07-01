@@ -113,12 +113,19 @@ function showSummaryShell(meeting) {
 }
 
 function renderSummary(summary, status) {
+  const chunkCount = Number(summary.chunkCount || 0);
+  const chunkText =
+    chunkCount > 1
+      ? ` &middot; ${chunkCount} chunks`
+      : "";
+
   summaryEl.innerHTML = `
     <h2>${escapeHtml(summary.meetingTitle)}</h2>
     <p class="summary-meta">
       ${escapeHtml(formatDate(summary.meetingPubDate))}
       &middot; ${status === "cached" ? "Cached" : "Generated"} with ${escapeHtml(summary.model)}
       &middot; ${escapeHtml(summary.reasoningEffort)} reasoning
+      ${chunkText}
     </p>
     <p class="summary-meta">
       <a href="${escapeAttribute(summary.mediaUrl)}" target="_blank" rel="noreferrer">Meeting video</a>

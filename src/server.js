@@ -6,10 +6,9 @@ import { config } from "./config.js";
 import {
   fetchTranscript,
   findKnownMeeting,
-  getKnownMeetings,
-  TranscriptTooLargeError
+  getKnownMeetings
 } from "./granicus.js";
-import { summarizeTranscript } from "./summarizer.js";
+import { summarizeTranscript, TranscriptTooLargeError } from "./summarizer.js";
 import {
   getSummary,
   listSummaries,

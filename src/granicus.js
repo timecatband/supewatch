@@ -84,12 +84,6 @@ export async function fetchTranscript(meeting) {
     throw new Error("Transcript page did not contain enough text to summarize");
   }
 
-  if (transcript.length > config.maxTranscriptChars) {
-    throw new TranscriptTooLargeError(
-      `Transcript is ${transcript.length} characters, above MAX_TRANSCRIPT_CHARS=${config.maxTranscriptChars}`
-    );
-  }
-
   return transcript;
 }
 
@@ -168,11 +162,4 @@ async function writeJson(filePath, value) {
   const tempPath = `${filePath}.${process.pid}.tmp`;
   await fs.writeFile(tempPath, `${JSON.stringify(value, null, 2)}\n`);
   await fs.rename(tempPath, filePath);
-}
-
-export class TranscriptTooLargeError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "TranscriptTooLargeError";
-  }
 }
