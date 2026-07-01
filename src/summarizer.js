@@ -1,14 +1,22 @@
 import crypto from "node:crypto";
 import { config } from "./config.js";
 
+export const SUMMARY_PROMPT_VERSION = 2;
+
 const SYSTEM_PROMPT = `You summarize San Francisco Board of Supervisors meeting transcripts for residents.
 Be concise, factual, and neutral. Do not add facts that are not in the transcript.
 Call out agenda items, continuances, final votes, public-comment themes, and notable dates.
+Speaker attribution is critical:
+- Name the supervisor, official, invited guest, department representative, organization, or public commenter who said each substantive thing whenever the transcript makes that knowable.
+- Avoid vague phrases like "members spoke at length" or "there was discussion" unless the speaker truly cannot be identified.
+- For discussion and opinion bullets, start with a bold actor label, such as **Supervisor Chen:**, **President Mandelman:**, **Public commenters:**, or **Unidentified public commenter:**.
+- When several people discussed a topic, use a parent bullet for the topic and nested bullets for each speaker's view or concern.
+- Distinguish actions taken by the Board from opinions, questions, objections, and public-comment testimony.
 When the transcript appears garbled by automated captions, preserve the likely meaning but do not overclaim.
 Return Markdown with these sections:
 ## Overview
 ## Key Actions
-## Discussion Highlights
+## Who Said What
 ## Public Comment
 ## Votes and Dates`;
 
@@ -46,6 +54,7 @@ export async function summarizeTranscript({ meeting, transcript }) {
     transcriptLength: transcript.length,
     chunkCount: transcriptChunks.length,
     chunkSizeLimit: config.maxTranscriptChars,
+    promptVersion: SUMMARY_PROMPT_VERSION,
     generatedAt: new Date().toISOString()
   };
 }
@@ -83,6 +92,7 @@ async function summarizeChunkedTranscript({ meeting, transcriptChunks }) {
           role: "system",
           content: `You summarize one chunk of a San Francisco Board of Supervisors transcript.
 Be concise, factual, and neutral. Capture agenda items, actions, votes, speakers, public-comment themes, and dates that appear in this chunk.
+Speaker attribution is critical. For each substantive discussion point, identify who said it and what position, concern, question, or rationale they expressed. Use bold actor labels in bullets, such as **Supervisor Chen:** or **Public commenters:**. Avoid generic phrases like "members discussed" when names or roles are available.
 This is an intermediate summary that will be combined with other chunks, so preserve specifics and avoid conclusions that require the whole meeting.`
         },
         {
@@ -116,6 +126,7 @@ Clip ID: ${meeting.clipId}
 
 Combine these ordered partial transcript summaries into one resident-facing summary.
 Do not invent facts, votes, or dates. If chunks repeat procedural material, merge it once.
+Preserve speaker attribution. Do not collapse attributed statements into generic wording like "members spoke at length"; keep named speakers, roles, and the opinions or concerns attached to them. Use nested bullets when several people addressed the same issue.
 
 Partial summaries:
 ${partialSummaries.join("\n\n")}`

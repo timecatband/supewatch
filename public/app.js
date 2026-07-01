@@ -1,3 +1,5 @@
+import { escapeAttribute, escapeHtml, markdownToHtml } from "./markdown.js";
+
 const meetingList = document.querySelector("#meeting-list");
 const meetingCount = document.querySelector("#meeting-count");
 const refreshButton = document.querySelector("#refresh");
@@ -136,47 +138,6 @@ function renderSummary(summary, status) {
   `;
 }
 
-function markdownToHtml(markdown) {
-  const lines = markdown.split(/\r?\n/);
-  const html = [];
-  let inList = false;
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    if (!trimmed) {
-      if (inList) {
-        html.push("</ul>");
-        inList = false;
-      }
-      continue;
-    }
-
-    if (trimmed.startsWith("## ")) {
-      if (inList) {
-        html.push("</ul>");
-        inList = false;
-      }
-      html.push(`<h3>${escapeHtml(trimmed.slice(3))}</h3>`);
-    } else if (trimmed.startsWith("- ")) {
-      if (!inList) {
-        html.push("<ul>");
-        inList = true;
-      }
-      html.push(`<li>${escapeHtml(trimmed.slice(2))}</li>`);
-    } else {
-      if (inList) {
-        html.push("</ul>");
-        inList = false;
-      }
-      html.push(`<p>${escapeHtml(trimmed)}</p>`);
-    }
-  }
-
-  if (inList) html.push("</ul>");
-  return html.join("");
-}
-
 function formatDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value || "";
@@ -185,17 +146,4 @@ function formatDate(value) {
     dateStyle: "medium",
     timeStyle: "short"
   }).format(date);
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function escapeAttribute(value) {
-  return escapeHtml(value).replace(/`/g, "&#96;");
 }

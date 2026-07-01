@@ -8,7 +8,11 @@ import {
   findKnownMeeting,
   getKnownMeetings
 } from "./granicus.js";
-import { summarizeTranscript, TranscriptTooLargeError } from "./summarizer.js";
+import {
+  SUMMARY_PROMPT_VERSION,
+  summarizeTranscript,
+  TranscriptTooLargeError
+} from "./summarizer.js";
 import {
   getSummary,
   listSummaries,
@@ -50,7 +54,7 @@ async function routeRequest(request, response) {
     return sendJson(response, 200, {
       meetings: meetings.map((meeting) => ({
         ...meeting,
-        summaryGenerated: Boolean(summaries[meeting.clipId])
+        summaryGenerated: isCurrentSummary(summaries[meeting.clipId])
       }))
     });
   }
@@ -76,7 +80,7 @@ async function handleSummaryRequest(response, clipId) {
   }
 
   const cachedSummary = await getSummary(clipId);
-  if (cachedSummary) {
+  if (isCurrentSummary(cachedSummary)) {
     return sendJson(response, 200, {
       status: "cached",
       summary: cachedSummary
@@ -133,6 +137,10 @@ function sendSummaryError(response, error) {
   }
 
   throw error;
+}
+
+function isCurrentSummary(summary) {
+  return summary?.promptVersion === SUMMARY_PROMPT_VERSION;
 }
 
 async function generateSummary(meeting) {
