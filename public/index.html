@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Supewatch</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <img
+          src="https://webcontent.granicusops.com/content/sanfrancisco/sfseal.gif"
+          alt="City and County of San Francisco seal"
+          width="56"
+          height="56"
+        >
+        <div>
+          <h1>Supewatch</h1>
+          <p>San Francisco Board of Supervisors meeting summaries</p>
+        </div>
+      </div>
+      <a class="source-link" href="https://sanfrancisco.granicus.com/ViewPublisher.php?view_id=10" target="_blank" rel="noreferrer">
+        All meetings
+      </a>
+    </header>
+
+    <main class="layout">
+      <section class="meetings-panel" aria-label="Meetings">
+        <div class="panel-header">
+          <div>
+            <h2>Meetings</h2>
+            <p id="meeting-count">Loading meetings...</p>
+          </div>
+          <button id="refresh" class="secondary-button" type="button">Refresh</button>
+        </div>
+        <div id="meeting-list" class="meeting-list" aria-live="polite"></div>
+      </section>
+
+      <section class="summary-panel" aria-live="polite">
+        <div id="summary-empty" class="summary-empty">
+          <h2>Select a meeting</h2>
+          <p>Use View summary to generate or reopen a cached summary.</p>
+        </div>
+        <article id="summary" class="summary hidden"></article>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
