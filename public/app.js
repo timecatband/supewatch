@@ -120,6 +120,7 @@ function renderSummary(summary, status) {
     chunkCount > 1
       ? ` &middot; ${chunkCount} chunks`
       : "";
+  const agendaLink = summary.agenda?.agendaUrl || summary.agenda?.granicusAgendaUrl || "";
 
   summaryEl.innerHTML = `
     <h2>${escapeHtml(summary.meetingTitle)}</h2>
@@ -133,9 +134,80 @@ function renderSummary(summary, status) {
       <a href="${escapeAttribute(summary.mediaUrl)}" target="_blank" rel="noreferrer">Meeting video</a>
       &middot;
       <a href="${escapeAttribute(summary.transcriptUrl)}" target="_blank" rel="noreferrer">Transcript</a>
+      ${agendaLink ? `&middot; <a href="${escapeAttribute(agendaLink)}" target="_blank" rel="noreferrer">Agenda</a>` : ""}
     </p>
-    ${markdownToHtml(summary.summary)}
+    ${renderAgendaItems(summary.agenda)}
+    ${markdownToHtml(linkAgendaReferences(summary.summary, summary.agenda))}
   `;
+}
+
+function renderAgendaItems(agenda) {
+  const items = (agenda?.items || []).filter((item) => item.itemNumber && item.fileNumber);
+  if (!items.length) return "";
+
+  const warning = agenda.warning
+    ? `<p class="agenda-warning">${escapeHtml(agenda.warning)}</p>`
+    : "";
+
+  return `
+    <section class="agenda-map" aria-label="Agenda item map">
+      <div class="agenda-map-header">
+        <h3>Agenda Items</h3>
+        <p>${escapeHtml(items.length)} linked legislative items</p>
+      </div>
+      ${warning}
+      <ol class="agenda-list">
+        ${items.map(renderAgendaItem).join("")}
+      </ol>
+    </section>
+  `;
+}
+
+function renderAgendaItem(item) {
+  const href = agendaItemUrl(item);
+  const title = item.shortTitle || item.title || "Untitled legislation";
+  const label = `Item ${item.itemNumber}: File ${item.fileNumber}`;
+  const labelHtml = href
+    ? `<a href="${escapeAttribute(href)}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a>`
+    : escapeHtml(label);
+  const type = item.type ? `<span>${escapeHtml(item.type)}</span>` : "";
+  const status = item.status ? `<span>${escapeHtml(item.status)}</span>` : "";
+
+  return `
+    <li value="${escapeAttribute(item.itemNumber)}">
+      <div class="agenda-item-title">${labelHtml}</div>
+      <p>${escapeHtml(title)}</p>
+      ${type || status ? `<div class="agenda-item-meta">${type}${status}</div>` : ""}
+    </li>
+  `;
+}
+
+function linkAgendaReferences(markdown, agenda) {
+  const items = (agenda?.items || []).filter((item) => item.itemNumber || item.fileNumber);
+  if (!items.length) return markdown || "";
+
+  const itemsByNumber = new Map();
+  const itemsByFile = new Map();
+  for (const item of items) {
+    const href = agendaItemUrl(item);
+    if (!href) continue;
+    if (item.itemNumber) itemsByNumber.set(String(item.itemNumber), href);
+    if (item.fileNumber) itemsByFile.set(String(item.fileNumber), href);
+  }
+
+  return String(markdown || "")
+    .replace(/\bItem\s+(\d+)\b/g, (match, itemNumber) => {
+      const href = itemsByNumber.get(itemNumber);
+      return href ? `[${match}](${href})` : match;
+    })
+    .replace(/\bFile\s+(?:No\.\s*)?#?(\d{6})\b/g, (match, fileNumber) => {
+      const href = itemsByFile.get(fileNumber);
+      return href ? `[${match}](${href})` : match;
+    });
+}
+
+function agendaItemUrl(item) {
+  return item?.detailUrl || item?.videoUrl || "";
 }
 
 function formatDate(value) {

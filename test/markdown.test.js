@@ -22,3 +22,12 @@ test("markdownToHtml escapes unsafe html", () => {
     "<h3>&lt;script&gt;alert(1)&lt;/script&gt;</h3>"
   );
 });
+
+test("markdownToHtml preserves query parameters in links", () => {
+  assert.equal(
+    markdownToHtml(
+      "[File 260502](https://sfgov.legistar.com/LegislationDetail.aspx?ID=8008869&GUID=2429F850-FD15-460E-B110-3C82EEB22498&Options=ID%7C&Search=)"
+    ),
+    '<p><a href="https://sfgov.legistar.com/LegislationDetail.aspx?ID=8008869&amp;GUID=2429F850-FD15-460E-B110-3C82EEB22498&amp;Options=ID%7C&amp;Search=" target="_blank" rel="noreferrer">File 260502</a></p>'
+  );
+});

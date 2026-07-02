@@ -8,6 +8,7 @@ import {
   findKnownMeeting,
   getKnownMeetings
 } from "./granicus.js";
+import { getMeetingAgenda } from "./legistar.js";
 import {
   SUMMARY_PROMPT_VERSION,
   summarizeTranscript,
@@ -145,8 +146,11 @@ function isCurrentSummary(summary) {
 
 async function generateSummary(meeting) {
   await reserveSummaryGenerationSlot();
-  const transcript = await fetchTranscript(meeting);
-  const summaryRecord = await summarizeTranscript({ meeting, transcript });
+  const [transcript, agenda] = await Promise.all([
+    fetchTranscript(meeting),
+    getMeetingAgenda(meeting)
+  ]);
+  const summaryRecord = await summarizeTranscript({ meeting, transcript, agenda });
   return saveSummary(meeting.clipId, summaryRecord);
 }
 

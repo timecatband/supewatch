@@ -311,6 +311,74 @@ button:disabled {
   margin: 20px 0;
 }
 
+.agenda-map {
+  margin: 22px 0 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.agenda-map-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.summary .agenda-map h3 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.agenda-map-header p,
+.agenda-warning,
+.agenda-item-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.agenda-warning {
+  margin-bottom: 10px;
+}
+
+.agenda-list {
+  display: grid;
+  gap: 8px;
+  max-width: 96ch;
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.agenda-list li {
+  margin: 0;
+  padding: 8px 0 8px 4px;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.agenda-list li:last-child {
+  border-bottom: 0;
+}
+
+.agenda-item-title {
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.agenda-list p {
+  max-width: none;
+  margin: 3px 0 0;
+  line-height: 1.45;
+}
+
+.agenda-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .error {
   border-left: 4px solid var(--accent);
   padding: 12px 14px;

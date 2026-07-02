@@ -100,10 +100,14 @@ function inlineMarkdown(value) {
   html = html.replace(
     /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
     (_, label, url) =>
-      `<a href="${escapeAttribute(url)}" target="_blank" rel="noreferrer">${label}</a>`
+      `<a href="${escapeAttribute(normalizeEscapedUrl(url))}" target="_blank" rel="noreferrer">${label}</a>`
   );
   html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 
   return html;
+}
+
+function normalizeEscapedUrl(url) {
+  return url.replace(/&amp;/g, "&");
 }

@@ -1,11 +1,13 @@
 import crypto from "node:crypto";
 import { config } from "./config.js";
+import { agendaContextForPrompt } from "./legistar.js";
 
-export const SUMMARY_PROMPT_VERSION = 2;
+export const SUMMARY_PROMPT_VERSION = 3;
 
 const SYSTEM_PROMPT = `You summarize San Francisco Board of Supervisors meeting transcripts for residents.
 Be concise, factual, and neutral. Do not add facts that are not in the transcript.
 Call out agenda items, continuances, final votes, public-comment themes, and notable dates.
+When official agenda context is available, resolve bare transcript references such as "Item 11" to the matching agenda item, file number, and title. Prefer "Item 11: File 260502 - Short Title" over unresolved wording like "Item 11."
 Speaker attribution is critical:
 - Name the supervisor, official, invited guest, department representative, organization, or public commenter who said each substantive thing whenever the transcript makes that knowable.
 - Avoid vague phrases like "members spoke at length" or "there was discussion" unless the speaker truly cannot be identified.
@@ -20,7 +22,7 @@ Return Markdown with these sections:
 ## Public Comment
 ## Votes and Dates`;
 
-export async function summarizeTranscript({ meeting, transcript }) {
+export async function summarizeTranscript({ meeting, transcript, agenda = null }) {
   if (!config.openAiApiKey) {
     throw new Error("OPENAI_API_KEY is not configured");
   }
@@ -34,8 +36,8 @@ export async function summarizeTranscript({ meeting, transcript }) {
 
   const summary =
     transcriptChunks.length === 1
-      ? await summarizeWholeTranscript({ meeting, transcript })
-      : await summarizeChunkedTranscript({ meeting, transcriptChunks });
+      ? await summarizeWholeTranscript({ meeting, transcript, agenda })
+      : await summarizeChunkedTranscript({ meeting, transcriptChunks, agenda });
 
   if (!summary) {
     throw new Error("OpenAI response did not include summary text");
@@ -47,6 +49,7 @@ export async function summarizeTranscript({ meeting, transcript }) {
     meetingPubDate: meeting.pubDate,
     mediaUrl: meeting.mediaUrl,
     transcriptUrl: meeting.transcriptUrl,
+    agenda: publicAgendaRecord(agenda),
     summary,
     model: config.openAiModel,
     reasoningEffort: config.openAiReasoningEffort,
@@ -59,7 +62,7 @@ export async function summarizeTranscript({ meeting, transcript }) {
   };
 }
 
-async function summarizeWholeTranscript({ meeting, transcript }) {
+async function summarizeWholeTranscript({ meeting, transcript, agenda }) {
   return createOpenAiSummary({
     maxOutputTokens: config.openAiMaxOutputTokens,
     input: [
@@ -73,6 +76,9 @@ async function summarizeWholeTranscript({ meeting, transcript }) {
 Meeting date: ${meeting.pubDate}
 Clip ID: ${meeting.clipId}
 
+Official agenda context:
+${agendaContextForPrompt(agenda)}
+
 Transcript:
 ${transcript}`
       }
@@ -80,7 +86,7 @@ ${transcript}`
   });
 }
 
-async function summarizeChunkedTranscript({ meeting, transcriptChunks }) {
+async function summarizeChunkedTranscript({ meeting, transcriptChunks, agenda }) {
   const partialSummaries = [];
 
   for (const [index, chunk] of transcriptChunks.entries()) {
@@ -101,6 +107,9 @@ This is an intermediate summary that will be combined with other chunks, so pres
 Meeting date: ${meeting.pubDate}
 Clip ID: ${meeting.clipId}
 Transcript chunk: ${chunkNumber} of ${transcriptChunks.length}
+
+Official agenda context:
+${agendaContextForPrompt(agenda)}
 
 Transcript chunk:
 ${chunk}`
@@ -127,12 +136,43 @@ Clip ID: ${meeting.clipId}
 Combine these ordered partial transcript summaries into one resident-facing summary.
 Do not invent facts, votes, or dates. If chunks repeat procedural material, merge it once.
 Preserve speaker attribution. Do not collapse attributed statements into generic wording like "members spoke at length"; keep named speakers, roles, and the opinions or concerns attached to them. Use nested bullets when several people addressed the same issue.
+Use the official agenda context below to resolve agenda item references. If a partial summary says only "Item 11" and the map identifies it, include the item number, file number, and short title in the final summary.
+
+Official agenda context:
+${agendaContextForPrompt(agenda)}
 
 Partial summaries:
 ${partialSummaries.join("\n\n")}`
       }
     ]
   });
+}
+
+function publicAgendaRecord(agenda) {
+  if (!agenda) return null;
+
+  return {
+    source: agenda.source,
+    resolvedAt: agenda.resolvedAt,
+    granicusAgendaUrl: agenda.granicusAgendaUrl || "",
+    meetingDetailUrl: agenda.meetingDetailUrl || "",
+    meetingFeedUrl: agenda.meetingFeedUrl || "",
+    agendaUrl: agenda.agendaUrl || "",
+    warning: agenda.warning || "",
+    items: (agenda.items || []).map((item) => ({
+      itemNumber: item.itemNumber,
+      fileNumber: item.fileNumber,
+      title: item.title,
+      shortTitle: item.shortTitle,
+      type: item.type,
+      status: item.status,
+      action: item.action,
+      result: item.result,
+      detailUrl: item.detailUrl,
+      videoUrl: item.videoUrl,
+      videoTimeSeconds: item.videoTimeSeconds
+    }))
+  };
 }
 
 async function createOpenAiSummary({ input, maxOutputTokens }) {
